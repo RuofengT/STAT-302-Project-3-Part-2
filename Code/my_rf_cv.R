@@ -20,32 +20,25 @@ my_rf_cv <- function(train, k_cv) {
   # link the fold numbers to input data frame
   train["fold"] <- fold
 
-  # creates a data frame to store predictions for each element
-  predictions <- data.frame("fold" = fold)
-
   # creates a vector to store MSE's for each test fold
   MSE <- c(1 : k_cv)
 
   # iterate through each fold, and store predictions for each test fold
   for (i in 1 : k_cv) {
     # create a random forest model for predicting the test data with 100 trees
-    model <- randomForest(body_mass_g ~
+    model <- randomForest::randomForest(body_mass_g ~
                                           bill_length_mm +
                                           bill_depth_mm +
                                           flipper_length_mm,
                                         data = train[train$fold != i, ],
                                         ntree = 100)
-    # store predictions for the test data
-    predictions[predictions$fold == i, "prediction"] <-
-      predict(model, train[train$fold == i, -1])
 
     # calculate MSE for the test fold
-    MSE[i] <- ((train[train$fold == i, "body_mass_g"] -
-                  predictions[predictions$fold == i, "prediction"]) ^ 2) /
-      sum(train$fold == i)
-    MSE[i] <- mean(MSE[[i]])
+    MSE[i] <- sum((train[train$fold == i, "body_mass_g"] -
+                     predict(model, train[train$fold == i, -1])) ^ 2) /
+      nrow(train[train$fold == i, ])
   }
 
   # get and return mean MSE
-  return(mean(unlist(MSE)))
+  return(mean(MSE))
 }
